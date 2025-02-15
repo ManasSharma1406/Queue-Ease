@@ -1,0 +1,49 @@
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+mongoose.connect("mongodb://localhost:27017/queueEase", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const queueSchema = new mongoose.Schema({
+  name: String,
+  phone: String,
+  status: { type: String, default: "waiting" },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const Queue = mongoose.model("Queue", queueSchema);
+
+// Add a patient to the queue
+app.post("/add-to-queue", async (req, res) => {
+  const { name, phone } = req.body;
+  const newPatient = new Queue({ name, phone });
+  await newPatient.save();
+  res.json({ success: true, message: "Added to queue" });
+});
+
+// Get the queue list
+app.get("/queue", async (req, res) => {
+  const queueList = await Queue.find().sort({ createdAt: 1 });
+  res.json(queueList);
+});
+
+// Mark patient as served
+app.put("/serve/:id", async (req, res) => {
+  await Queue.findByIdAndUpdate(req.params.id, { status: "served" });
+  res.json({ success: true, message: "Patient served" });
+});
+
+// Remove patient from queue
+app.delete("/remove/:id", async (req, res) => {
+  await Queue.findByIdAndDelete(req.params.id);
+  res.json({ success: true, message: "Removed from queue" });
+});
+
+app.listen(5000, () => console.log("Server running on port 5000"));
