@@ -1,0 +1,54 @@
+import { useState, useEffect } from "react";
+import axios from "axios";
+
+export default function QueueDashboard() {
+  const [queue, setQueue] = useState([]);
+
+  useEffect(() => {
+    fetchQueue();
+  }, []);
+
+  const fetchQueue = async () => {
+    const response = await axios.get("http://localhost:5000/queue");
+    setQueue(response.data);
+  };
+
+  const servePatient = async (id) => {
+    await axios.put(`http://localhost:5000/serve/${id}`);
+    fetchQueue();
+  };
+
+  const removePatient = async (id) => {
+    await axios.delete(`http://localhost:5000/remove/${id}`);
+    fetchQueue();
+  };
+
+  return (
+    <div className="p-5">
+      <h1 className="text-2xl font-bold">Queue Management</h1>
+      <ul className="mt-4">
+        {queue.map((patient) => (
+          <li key={patient._id} className="p-2 border-b flex justify-between">
+            <span>{patient.name} ({patient.status})</span>
+            <div>
+              {patient.status === "waiting" && (
+                <button
+                  className="bg-blue-500 text-white px-3 py-1 mr-2"
+                  onClick={() => servePatient(patient._id)}
+                >
+                  Serve
+                </button>
+              )}
+              <button
+                className="bg-red-500 text-white px-3 py-1"
+                onClick={() => removePatient(patient._id)}
+              >
+                Remove
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
